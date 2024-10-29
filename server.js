@@ -1,9 +1,29 @@
 import express from "express";
-import Joi from "joi";
+import pkg from "joi";
+import swaggerJSDoc from "swagger-jsdoc";
+import swaggerUi from "swagger-ui-express";
 
 const app = express();
 
 const PORT = 8000;
+
+const Joi = pkg;
+const { version } = pkg;
+
+const swaggerOptions = {
+  definition: {
+    openapi: "3.0.0",
+    info: {
+      title: "User API",
+      version: "1.0.0",
+      description: "A simple user API",
+    },
+  },
+  apis: ["./server.js"],
+};
+
+const swaggerDocs = swaggerJSDoc(swaggerOptions);
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 
 //  a schema for the request body
 const userSchema = Joi.object({
@@ -30,6 +50,33 @@ app.get("/", (req, res) => {
   res.send("Hej Hej!");
 });
 
+// get req.
+
+/**
+ * @swagger
+ * /users:
+ *   get:
+ *     summary: Get all users
+ *     responses:
+ *       200:
+ *         description: List of users
+ *       400:
+ *         description: something went wrong
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   id:
+ *                     type: integer
+ *                   name:
+ *                     type: string
+ *                   email:
+ *                     type: string
+ */
+
 app.get("/users", (req, res) => {
   console.dir(req.headers);
   console.dir(req.body);
@@ -37,6 +84,36 @@ app.get("/users", (req, res) => {
 
   res.send(users);
 });
+
+/**
+ * @swagger
+ * /users/{id}:
+ *   get:
+ *     summary: Get a user by ID
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: integer
+ *         required: true
+ *         description: User id is needed
+ *     responses:
+ *       200:
+ *         description: A single user
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 id:
+ *                   type: integer
+ *                 name:
+ *                   type: string
+ *                 email:
+ *                   type: string
+ *       400:
+ *         description: User not found
+ */
 
 app.get("/users/:id", (req, res) => {
   console.dir(req.params);
@@ -63,7 +140,30 @@ app.get("/users/:id", (req, res) => {
   }
 });
 
-// add user req
+// post req.
+
+/**
+ * @swagger
+ * /users:
+ *   post:
+ *     summary: Add a new user
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *               email:
+ *                 type: string
+ *     responses:
+ *       201:
+ *         description: User created
+ *       400:
+ *         description: Invalid input
+ */
 
 app.post("/users", (req, res) => {
   const { error } = userSchema.validate(req.body);
@@ -81,6 +181,37 @@ app.post("/users", (req, res) => {
 });
 
 // put req
+
+/**
+ * @swagger
+ * /users/{id}:
+ *   put:
+ *     summary: Update a user by ID
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: integer
+ *         required: true
+ *         description: ID of the user to update
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *               email:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: User updated successfully
+ *       400:
+ *         description: Invalid ID or input
+ */
+
 app.put("/users/:id", (req, res) => {
   const { error: idError } = idSchema.validate(req.params.id);
   if (idError) {
@@ -113,6 +244,25 @@ app.put("/users/:id", (req, res) => {
 });
 
 // delete req
+/**
+ * @swagger
+ * /users/{id}:
+ *   delete:
+ *     summary: Delete a user by ID
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: integer
+ *         required: true
+ *         description: ID of the user to delete
+ *     responses:
+ *       200:
+ *         description: User deleted successfully
+ *       400:
+ *         description: User not found
+ */
+
 app.delete("/users/:id", (req, res) => {
   const userId = parseInt(req.params.id);
   const userIndex = users.findIndex((user) => user.id === userId);
